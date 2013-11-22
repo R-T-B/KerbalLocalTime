@@ -14,6 +14,7 @@ public class StylesManager
 		if(stylesLoaded)
 			return;
 		
+		stylesLoaded = true;
 		layoutStyle = new GUIStyle(GUI.skin.box); 
 		layoutStyle.normal.textColor = layoutStyle.focused.textColor = Color.white;
 		layoutStyle.hover.textColor = layoutStyle.active.textColor = Color.yellow;
