@@ -4,6 +4,7 @@ using System.Linq;
 using System.Globalization;
 using KSP.IO;
 using UnityEngine;
+using KSP.UI.Screens;
 
 [KSPAddon(KSPAddon.Startup.EveryScene, false)]
 public class LocalTimePart : MonoBehaviour
@@ -12,25 +13,25 @@ public class LocalTimePart : MonoBehaviour
 	
 	protected Rect windowPos;
 	protected Rect optionsWindowPos;
-	protected bool toggled = false;
-	protected bool options = false;
-	protected bool displayksc = true;
-	protected bool displaylocal = true;
-	protected bool displayrel = true;
-	protected bool displayreal = true;
-	protected bool display24ksc = true;
-	protected bool display24local = true;
-	protected bool display24rel = true;
-	protected bool display24real = true;
-	protected bool displaySecsksc = true;
-	protected bool displaySecslocal = true;
-	protected bool displaySecsrel = true;
-	protected bool displaySecsreal = true;
-	protected bool displayTZksc = true;
-	protected bool displayTZlocal = true;
-	protected bool displayTZrel = true;
+	public static bool toggled = false;
+	public static bool options = false;
+	public static bool displayksc = true;
+	public static bool displaylocal = true;
+	public static bool displayrel = true;
+	public static bool displayreal = true;
+	public static bool display24ksc = true;
+	public static bool display24local = true;
+	public static bool display24rel = true;
+	public static bool display24real = true;
+	public static bool displaySecsksc = true;
+	public static bool displaySecslocal = true;
+	public static bool displaySecsrel = true;
+	public static bool displaySecsreal = true;
+	public static bool displayTZksc = true;
+	public static bool displayTZlocal = true;
+	public static bool displayTZrel = true;
 	private static LocalTimePart instance;
-	protected bool coreinited = false;
+	public static bool coreinited = false;
 	private static PluginConfiguration config = null;
 	
 	private bool existsSecs()
@@ -56,45 +57,82 @@ public class LocalTimePart : MonoBehaviour
 		try
 		{
 			String vesselMainBodyName = FlightGlobals.ActiveVessel.mainBody.bodyName;
-            GUILayout.BeginVertical(styman.layoutStyle);
-            if (displaylocal)
-            {
-                GUILayout.Label("Local Time", styman.timeLabelStyle);
-                timeDoubleToDisplay(localTime(FlightGlobals.ActiveVessel.mainBody), timeZone(FlightGlobals.ActiveVessel.mainBody), display24local, displaySecslocal, displayTZlocal, FlightGlobals.ActiveVessel.mainBody.bodyName.First());
-            }
-            if (displayrel)
-            {
-                GUILayout.Label(FlightGlobals.ActiveVessel.mainBody.referenceBody.bodyName + " Related Time", styman.timeLabelStyle);
+			GUILayout.BeginVertical(styman.layoutStyle);
+			if (displaylocal)
+			{
+				GUILayout.Label("Local Time", styman.timeLabelStyle);
+				timeDoubleToDisplay(localTime(FlightGlobals.ActiveVessel.mainBody), timeZone(FlightGlobals.ActiveVessel.mainBody), display24local, displaySecslocal, displayTZlocal, FlightGlobals.ActiveVessel.mainBody.bodyName.First());
+			}
+			if (displayrel)
+			{
+				GUILayout.Label(FlightGlobals.ActiveVessel.mainBody.referenceBody.bodyName + " Related Time", styman.timeLabelStyle);
 				if (FlightGlobals.ActiveVessel.mainBody.isStar)
 				{
-                    timeDoubleToDisplay(localTime(FlightGlobals.ActiveVessel.mainBody), timeZone(FlightGlobals.ActiveVessel.mainBody), display24local, displaySecslocal, displayTZlocal, FlightGlobals.ActiveVessel.mainBody.bodyName.First());
-                }
+					timeDoubleToDisplay(localTime(FlightGlobals.ActiveVessel.mainBody), timeZone(FlightGlobals.ActiveVessel.mainBody), display24local, displaySecslocal, displayTZlocal, FlightGlobals.ActiveVessel.mainBody.bodyName.First());
+				}
 				else
 				{
-                    timeDoubleToDisplay(localRelativeTime(FlightGlobals.ActiveVessel.mainBody.referenceBody), timeZone(FlightGlobals.ActiveVessel.mainBody.referenceBody), display24rel, displaySecsrel, displayTZrel, FlightGlobals.ActiveVessel.mainBody.referenceBody.bodyName.First());
-                }
-            }
-            if (displayksc)
-            {
-                GUILayout.Label("KSC Time", styman.timeLabelStyle);
-                timeDoubleToDisplay(kscTime(), 0, display24ksc, displaySecsksc, displayTZksc, 'K');
-            }
-            if (displayreal)
-            {
-                GUILayout.Label("Real World Time", styman.timeLabelStyle);
-                realWorldTime();
-            }
-            GUILayout.EndVertical();
-        }
+					timeDoubleToDisplay(localRelativeTime(FlightGlobals.ActiveVessel.mainBody.referenceBody), timeZone(FlightGlobals.ActiveVessel.mainBody.referenceBody), display24rel, displaySecsrel, displayTZrel, FlightGlobals.ActiveVessel.mainBody.referenceBody.bodyName.First());
+				}
+			}
+			if (displayksc)
+			{
+				GUILayout.Label("KSC Time", styman.timeLabelStyle);
+				timeDoubleToDisplay(kscTime(), 0, display24ksc, displaySecsksc, displayTZksc, 'K');
+			}
+			if (displayreal)
+			{
+				GUILayout.Label("Real World Time", styman.timeLabelStyle);
+				realWorldTime();
+			}
+			GUILayout.EndVertical();
+		}
 		catch
 		{
-            GUILayout.BeginVertical(styman.layoutStyle);
-            if (displayksc)
+            try
             {
-                GUILayout.Label("KSC Time", styman.timeLabelStyle);
-                timeDoubleToDisplay(kscTime(), 0, display24ksc, displaySecsksc, displayTZksc, 'K');
+				Vessel veselTarget = PlanetariumCamera.fetch.target.vessel;
+                String vesselMainBodyName = veselTarget.mainBody.bodyName;
+                GUILayout.BeginVertical(styman.layoutStyle);
+                if (displaylocal)
+                {
+                    GUILayout.Label("Local Time", styman.timeLabelStyle);
+                    timeDoubleToDisplay(localTime(veselTarget.mainBody), timeZone(veselTarget.mainBody), display24local, displaySecslocal, displayTZlocal, veselTarget.mainBody.bodyName.First());
+                }
+                if (displayrel)
+                {
+                    GUILayout.Label(veselTarget.mainBody.referenceBody.bodyName + " Related Time", styman.timeLabelStyle);
+                    if (veselTarget.mainBody.isStar)
+                    {
+                        timeDoubleToDisplay(localTime(veselTarget.mainBody), timeZone(veselTarget.mainBody), display24local, displaySecslocal, displayTZlocal, veselTarget.mainBody.bodyName.First());
+                    }
+                    else
+                    {
+                        timeDoubleToDisplay(localRelativeTime(veselTarget.mainBody.referenceBody), timeZone(veselTarget.mainBody.referenceBody), display24rel, displaySecsrel, displayTZrel, veselTarget.mainBody.referenceBody.bodyName.First());
+                    }
+                }
+                if (displayksc)
+                {
+                    GUILayout.Label("KSC Time", styman.timeLabelStyle);
+                    timeDoubleToDisplay(kscTime(), 0, display24ksc, displaySecsksc, displayTZksc, 'K');
+                }
+                if (displayreal)
+                {
+                    GUILayout.Label("Real World Time", styman.timeLabelStyle);
+                    realWorldTime();
+                }
+                GUILayout.EndVertical();
             }
-            GUILayout.EndVertical();
+            catch
+            {
+                GUILayout.BeginVertical(styman.layoutStyle);
+                if (displayksc)
+                {
+                    GUILayout.Label("KSC Time", styman.timeLabelStyle);
+                    timeDoubleToDisplay(kscTime(), 0, display24ksc, displaySecsksc, displayTZksc, 'K');
+                }
+                GUILayout.EndVertical();
+            }
         }
 
         //DragWindow makes the window draggable. The Rect specifies which part of the window it can by dragged by, and is 
@@ -195,12 +233,12 @@ public class LocalTimePart : MonoBehaviour
 			if (windowPos.xMax > Screen.width)
 			{
 				windowPos.xMin = 0;
-                windowPos.xMax = 200;
+                windowPos.xMax = Screen.width /2;
             }
             if (windowPos.yMax > Screen.height)
             {
                 windowPos.yMin = 0;
-                windowPos.yMax = 200;
+                windowPos.yMax = Screen.height / 2;
             }
             windowPos.height = 0;
             windowPos.width = 200 * GameSettings.UI_SCALE;
@@ -210,12 +248,12 @@ public class LocalTimePart : MonoBehaviour
             if (optionsWindowPos.xMax > Screen.width)
             {
                 optionsWindowPos.xMin = 0;
-                optionsWindowPos.xMax = 200;
+                optionsWindowPos.xMax = Screen.width / 2;
             }
             if (optionsWindowPos.yMax > Screen.height)
             {
                 optionsWindowPos.yMin = 0;
-                optionsWindowPos.yMax = 200;
+                optionsWindowPos.yMax = Screen.height / 2;
             }
             optionsWindowPos.height = 0;
 			optionsWindowPos.width = 350 * GameSettings.UI_SCALE;
@@ -313,7 +351,7 @@ public class LocalTimePart : MonoBehaviour
 			}
 		}
 	}
-	protected double localSolarTime(CelestialBody body) //may be used later for planets rise
+	protected static double localSolarTime(CelestialBody body) //may be used later for planets rise
 	{
 		double solarDayLength = body.solarDayLength;
 		double time = Planetarium.GetUniversalTime() + (body.solarDayLength / 2);
@@ -322,35 +360,35 @@ public class LocalTimePart : MonoBehaviour
 		return TimeOfDay;
 
 	}
-	protected double trueRelativeTime(CelestialBody body) //relative to reference body
+	protected static double trueRelativeTime(CelestialBody body) //relative to reference body
 	{
         if (body.isStar)
             return 12;
 
         return localSolarTime(body) + exactTimeZone(body);
     }
-	protected double trueTime(CelestialBody body)
+	protected static double trueTime(CelestialBody body)
 	{
         if (body.isStar)
             return 12;
 
         return localSolarTime(body) + exactTimeZone(body);
     }
-	protected double kmtRelativeTime(CelestialBody body) //relative to reference body
+	protected static double kmtRelativeTime(CelestialBody body) //relative to reference body
 	{
         if (body.isStar)
 			return 12;
 		
 		return localSolarTime(body);
 	}
-	protected double kmtTime(CelestialBody body)
+	protected static double kmtTime(CelestialBody body)
 	{
         if (body.isStar)
             return 12;
 		
 		return localSolarTime(body);
 	}
-    protected double timeZone(CelestialBody body)
+    protected static double timeZone(CelestialBody body)
 	{
 		double timeZ;
 		if (body.isStar)
@@ -368,7 +406,7 @@ public class LocalTimePart : MonoBehaviour
 			timeZ += 24;
 		return timeZ;
 	}
-	protected double exactTimeZone(CelestialBody body)
+	protected static double exactTimeZone(CelestialBody body)
     {
         double timeZ;
         if (body.isStar)
@@ -386,7 +424,7 @@ public class LocalTimePart : MonoBehaviour
             timeZ += 24;
         return timeZ;
     }
-    protected double localRelativeTime(CelestialBody body)
+    protected static double localRelativeTime(CelestialBody body)
 	{
 		if(FlightGlobals.ActiveVessel.mainBody.isStar)
 			return 12;
@@ -398,7 +436,7 @@ public class LocalTimePart : MonoBehaviour
 
 		return localT % 24;
 	}
-	protected double localTime(CelestialBody body)
+	protected static double localTime(CelestialBody body)
 	{
 		if(FlightGlobals.ActiveVessel.mainBody.isStar)
 			return 12;
@@ -410,7 +448,7 @@ public class LocalTimePart : MonoBehaviour
 
 		return localT % 24;
 	}
-	protected double kscTime()
+	protected static double kscTime()
 	{
         return localSolarTime(FlightGlobals.GetHomeBody());
     }
@@ -485,7 +523,67 @@ public class LocalTimePart : MonoBehaviour
 
         GUILayout.Label(result,styman.timeStyle);
 	}
-	protected CelestialBody getKerbin()
+    public static string kscTimeStringToDisplay()
+    {
+		double time = kscTime();
+		double timeZone = 0;
+		bool display24 = display24ksc;
+        bool displayTZ = displayTZksc;
+		bool displaySecs = displaySecsksc;
+        while (timeZone > 12)
+            timeZone -= 24;
+        while (timeZone < -11)
+            timeZone += 24;
+        double amState = 0;
+        if (!display24)
+        {
+            if (time >= 12)
+            {
+                amState = 1;
+                time -= 12;
+            }
+            if (time < 0)
+            {
+                time += 12;
+            }
+        }
+
+        double timecpy = time;
+        double hourfirdig = Math.Floor(time / 10);
+        double hoursecdig = Math.Floor(time) % 10;
+
+        timecpy = 60 * (time - Math.Floor(time));
+
+        double minfirdig = Math.Floor(timecpy / 10);
+        double minsecdig = Math.Floor(timecpy) % 10;
+
+        timecpy = 60 * (timecpy - Math.Floor(timecpy));
+
+        double secfirdig = Math.Floor(timecpy / 10);
+        double secsecdig = Math.Floor(timecpy) % 10;
+
+        double gmtSign = (timeZone < 0) ? -1 : 1;
+        double timeZonecpy = timeZone * gmtSign;
+        double gmtfirdig = Math.Floor(timeZonecpy / 10);
+        double gmtsecdig = Math.Floor(timeZonecpy) % 10;
+
+        bool dispminsep = (System.DateTime.Now.Millisecond < 500) || displaySecs;
+        String result = "";
+
+        result += hourfirdig.ToString() + hoursecdig.ToString() + ":" + minfirdig.ToString() + minsecdig.ToString();
+
+        if (displaySecs)
+            result += ":" + secfirdig.ToString() + secsecdig.ToString();
+
+        if (!display24)
+            result += (amState == 0) ? "AM" : "PM";
+
+        if (displayTZ)
+            result += " (" + "K" + "MT" + ((timeZone >= 0) ? "+" : "") + Math.Round(timeZone).ToString() + ")";
+
+		return result;
+    }
+    protected CelestialBody getKerbin()
 	{
 		return FlightGlobals.GetHomeBody();
 	}
