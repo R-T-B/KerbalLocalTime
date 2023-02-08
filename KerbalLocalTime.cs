@@ -4,19 +4,16 @@ using System.Linq;
 using System.Globalization;
 using KSP.IO;
 using UnityEngine;
-using KLTUtils;
- 
-public class LocalTimePart : Part
+
+[KSPAddon(KSPAddon.Startup.EveryScene, false)]
+public class LocalTimePart : MonoBehaviour
 {
-	TexturesManager texman = new TexturesManager();
 	StylesManager styman = new StylesManager();
 	
 	protected Rect windowPos;
 	protected Rect optionsWindowPos;
 	protected bool toggled = false;
 	protected bool options = false;
-
-	protected bool displaystrings = true;
 	protected bool displayksc = true;
 	protected bool displaylocal = true;
 	protected bool displayrel = true;
@@ -32,7 +29,8 @@ public class LocalTimePart : Part
 	protected bool displayTZksc = true;
 	protected bool displayTZlocal = true;
 	protected bool displayTZrel = true;
-	
+	private static LocalTimePart instance;
+	protected bool coreinited = false;
 	private static PluginConfiguration config = null;
 	
 	private bool existsSecs()
@@ -55,72 +53,55 @@ public class LocalTimePart : Part
  
 	private void WindowGUI(int windowID)
 	{
-		GUILayout.BeginVertical(styman.layoutStyle);
+		try
+		{
+			String vesselMainBodyName = FlightGlobals.ActiveVessel.mainBody.bodyName;
+            GUILayout.BeginVertical(styman.layoutStyle);
+            if (displaylocal)
+            {
+                GUILayout.Label("Local Time", styman.timeLabelStyle);
+                timeDoubleToDisplay(localTime(FlightGlobals.ActiveVessel.mainBody), timeZone(FlightGlobals.ActiveVessel.mainBody), display24local, displaySecslocal, displayTZlocal, FlightGlobals.ActiveVessel.mainBody.bodyName.First());
+            }
+            if (displayrel)
+            {
+                GUILayout.Label(FlightGlobals.ActiveVessel.mainBody.referenceBody.bodyName + " Related Time", styman.timeLabelStyle);
+				if (FlightGlobals.ActiveVessel.mainBody.isStar)
+				{
+                    timeDoubleToDisplay(localTime(FlightGlobals.ActiveVessel.mainBody), timeZone(FlightGlobals.ActiveVessel.mainBody), display24local, displaySecslocal, displayTZlocal, FlightGlobals.ActiveVessel.mainBody.bodyName.First());
+                }
+				else
+				{
+                    timeDoubleToDisplay(localRelativeTime(FlightGlobals.ActiveVessel.mainBody.referenceBody), timeZone(FlightGlobals.ActiveVessel.mainBody.referenceBody), display24rel, displaySecsrel, displayTZrel, FlightGlobals.ActiveVessel.mainBody.referenceBody.bodyName.First());
+                }
+            }
+            if (displayksc)
+            {
+                GUILayout.Label("KSC Time", styman.timeLabelStyle);
+                timeDoubleToDisplay(kscTime(), 0, display24ksc, displaySecsksc, displayTZksc, 'K');
+            }
+            if (displayreal)
+            {
+                GUILayout.Label("Real World Time", styman.timeLabelStyle);
+                realWorldTime();
+            }
+            GUILayout.EndVertical();
+        }
+		catch
+		{
+            GUILayout.BeginVertical(styman.layoutStyle);
+            if (displayksc)
+            {
+                GUILayout.Label("KSC Time", styman.timeLabelStyle);
+                timeDoubleToDisplay(kscTime(), 0, display24ksc, displaySecsksc, displayTZksc, 'K');
+            }
+            GUILayout.EndVertical();
+        }
 
-		if(displaylocal)
-		{
-			if(displaystrings)
-				GUILayout.Label("Local Time", styman.timeLabelStyle);
-			else
-			{
-				GUILayout.BeginHorizontal();
-				GUILayout.Label(texman.getTexture("local"), styman.texStyle);
-				Utils.drawblanks(texman, styman, "top", false, false, existsSecs(), existsAm(), existsBoth());
-				
-				GUILayout.EndHorizontal();
-			}
-			timeDoubleToDisplay(localTime(), timeZone(), display24local, displaySecslocal, displayTZlocal, vessel.mainBody.bodyName.First());
-		}
-		if(displayrel)
-		{
-			if(displaystrings)
-				GUILayout.Label(vessel.mainBody.referenceBody.bodyName + " Related Time", styman.timeLabelStyle);
-			else
-			{
-				GUILayout.BeginHorizontal();
-				GUILayout.Label(texman.getTexture("rel"), styman.texStyle);
-				Utils.drawblanks(texman, styman, "top", false, false, existsSecs(), existsAm(), existsBoth());
-				
-				GUILayout.EndHorizontal();
-			}
-			timeDoubleToDisplay(localRelativeTime(), timeZone(), display24rel, displaySecsrel, displayTZrel, vessel.mainBody.bodyName.First());
-		}
-		if(displayksc)
-		{
-			if(displaystrings)
-				GUILayout.Label("KSC Time", styman.timeLabelStyle);
-			else
-			{
-				GUILayout.BeginHorizontal();
-				GUILayout.Label(texman.getTexture("ksc"), styman.texStyle);
-				Utils.drawblanks(texman, styman, "top", false, false, existsSecs(), existsAm(), existsBoth());
-				
-				GUILayout.EndHorizontal();
-			}
-			
-			timeDoubleToDisplay(kscTime(), -5, display24ksc, displaySecsksc, displayTZksc, 'K');
-		}
-		if(displayreal)
-		{
-			if(displaystrings)
-				GUILayout.Label("Real World Time", styman.timeLabelStyle);
-			else
-			{
-				GUILayout.BeginHorizontal();
-				GUILayout.Label(texman.getTexture("earth"), styman.texStyle);
-				Utils.drawblanks(texman, styman, "top", false, false, existsSecs(), existsAm(), existsBoth());
-				
-				GUILayout.EndHorizontal();
-				
-			}
-			realWorldTime();
-		}
-		GUILayout.EndVertical();
-		//DragWindow makes the window draggable. The Rect specifies which part of the window it can by dragged by, and is 
-		//clipped to the actual boundary of the window. You can also pass no argument at all and then the window can by
-		//dragged by any part of it. Make sure the DragWindow command is AFTER all your other GUI input stuff, or else
-		//it may "cover up" your controls and make them stop responding to the mouse.
-		GUI.DragWindow(new Rect(0, 0, 10000, 20));
+        //DragWindow makes the window draggable. The Rect specifies which part of the window it can by dragged by, and is 
+        //clipped to the actual boundary of the window. You can also pass no argument at all and then the window can by
+        //dragged by any part of it. Make sure the DragWindow command is AFTER all your other GUI input stuff, or else
+        //it may "cover up" your controls and make them stop responding to the mouse.
+        GUI.DragWindow();
  
 	}
 	
@@ -131,9 +112,6 @@ public class LocalTimePart : Part
 		bool optChanged = false;
 
 		GUILayout.BeginVertical();
-		before=displaystrings;
-		displaystrings = GUILayout.Toggle(displaystrings, "Display as text", styman.toggleStyle);
-		wndChanged = (before != displaystrings) || wndChanged;
 			
 		before=displaylocal;
 		displaylocal = GUILayout.Toggle(before, "Local Time", styman.toggleStyle);
@@ -214,56 +192,75 @@ public class LocalTimePart : Part
 		
 		if(wndChanged)
 		{
-			windowPos.height = 0;
-			windowPos.width = 110;
-		}
+			if (windowPos.xMax > Screen.width)
+			{
+				windowPos.xMin = 0;
+                windowPos.xMax = 200;
+            }
+            if (windowPos.yMax > Screen.height)
+            {
+                windowPos.yMin = 0;
+                windowPos.yMax = 200;
+            }
+            windowPos.height = 0;
+            windowPos.width = 200 * GameSettings.UI_SCALE;
+        }
 		if(optChanged)
 		{
-			optionsWindowPos.height = 0;
-			optionsWindowPos.width = 0;
+            if (optionsWindowPos.xMax > Screen.width)
+            {
+                optionsWindowPos.xMin = 0;
+                optionsWindowPos.xMax = 200;
+            }
+            if (optionsWindowPos.yMax > Screen.height)
+            {
+                optionsWindowPos.yMin = 0;
+                optionsWindowPos.yMax = 200;
+            }
+            optionsWindowPos.height = 0;
+			optionsWindowPos.width = 350 * GameSettings.UI_SCALE;
 		}
 		GUI.DragWindow(new Rect(0, 0, 10000, 20));
 	}
 
 
 	
-	private void drawGUI()
+	private void OnGUI()
 	{
-		print("Kerbal Local Time : " + this.GetInstanceID().ToString());
-		if(toggled && this.vessel == FlightGlobals.ActiveVessel)
-		{
-			GUI.skin = HighLogic.Skin;
+		if(toggled && ((HighLogic.LoadedSceneIsFlight) || HighLogic.LoadedScene.Equals(GameScenes.SPACECENTER) || HighLogic.LoadedScene.Equals(GameScenes.TRACKSTATION)))
+        {
 			styman.loadStyles();
-			windowPos = GUILayout.Window(this.GetInstanceID(), windowPos, WindowGUI, "Kerbal Local Time");
+			windowPos = GUILayout.Window(this.GetInstanceID(), windowPos, WindowGUI, "Kerbal Local Time",styman.windowStyle);
 		}
-		if(options && this.vessel == FlightGlobals.ActiveVessel)
-		{
-			GUI.skin = HighLogic.Skin;
+		if(options && ((HighLogic.LoadedSceneIsFlight) || HighLogic.LoadedScene.Equals(GameScenes.SPACECENTER) || HighLogic.LoadedScene.Equals(GameScenes.TRACKSTATION)))
+        {
 			styman.loadStyles();
-			optionsWindowPos = GUILayout.Window(this.GetInstanceID()+1, optionsWindowPos, OptionsGUI, "KLT Options");
+			optionsWindowPos = GUILayout.Window(this.GetInstanceID()+1, optionsWindowPos, OptionsGUI, "KLT Options", styman.windowStyle);
 		}
 	}
-	
-	[KSPEvent(guiActive = true, guiName = "Toggle display")]
 
 	public void Toggle()
 	{
-		print("Kerbal Local Time : Toggled");
-		toggled = !toggled;
+		if ((HighLogic.LoadedSceneIsFlight) || HighLogic.LoadedScene.Equals(GameScenes.SPACECENTER) || HighLogic.LoadedScene.Equals(GameScenes.TRACKSTATION))
+		{
+			if (toggled == true)
+			{
+				saveConfig(true,false);
+			}
+		}
+        toggled = !toggled;
 	}
-	
-	[KSPAction("Toggle display", actionGroup = KSPActionGroup.None)]
-	public void ToggleAction(KSPActionParam param)
-	{
-		Toggle();
-	}
-	
-	[KSPEvent(guiActive = true, guiName = "Options")]
 	
 	public void ToggleOptions()
 	{
-		print("Kerbal Local Time : Options Toggled");
-		options = !options;
+		if ((HighLogic.LoadedSceneIsFlight) || HighLogic.LoadedScene.Equals(GameScenes.SPACECENTER) || HighLogic.LoadedScene.Equals(GameScenes.TRACKSTATION))
+		{
+            if (options == true)
+            {
+                saveConfig(false,true);
+            }
+            options = !options;
+		}
 	}
 	
 	[KSPAction("Options", actionGroup = KSPActionGroup.None)]
@@ -271,127 +268,142 @@ public class LocalTimePart : Part
 	{
 		ToggleOptions();
 	}
-	
-	protected override void onFlightStart()  //Called when vessel is placed on the launchpad
+	private void Start()
 	{
-		print("Kerbal Local Time : Flight Started");
-		RenderingManager.AddToPostDrawQueue(3, new Callback(drawGUI));//start the GUI
-	}
-	protected override void onPartStart()
-	{
-		print("Kerbal Local Time : Part Started");
-		loadConfig();
-	}
-	protected override void onPartDestroy() 
-	{
-		print("Kerbal Local Time : Part Destroyed");
-		RenderingManager.RemoveFromPostDrawQueue(3, new Callback(drawGUI)); //close the GUI
-		saveConfig();
-	}
-	protected double localSideralTime(CelestialBody body) //may be used later for planets rise
-	{
-		Orbit orb = body.orbit;
-		//LAN + Arctan[ tan( tA + APe ) * cos(i) ]
-		double vesselArgument = orb.trueAnomaly*Math.PI/180f + orb.argumentOfPeriapsis*Math.PI/180f;
-		double locSidT;
-		locSidT = orb.LAN + 180*Math.Atan(Math.Tan(vesselArgument)*Math.Cos(orb.inclination*Math.PI/180f))/Math.PI;
-		
-		if(vesselArgument > Math.PI / 2 && vesselArgument < 3*Math.PI/2)
-			locSidT += 180;
-		
-		while(locSidT < 0)
-			locSidT += 360;
-		
-		return locSidT % 360;
-	}
-	protected double sideralTime(CelestialBody body)
-	{
-		if(body.bodyName == "Sun")
-			return 0;
-		
-		if(body.referenceBody.bodyName != "Sun")
-			return sideralTime(body.referenceBody);
+		if (instance == null)
+		{
+			instance = this;
+        }
 		else
-			return localSideralTime(body);
-	}
-	protected double trueRelativeTime() //relative to reference body
+		{
+            UnityEngine.Object.DestroyImmediate(this);
+        }
+		coreinited = true;
+        loadConfig();
+        windowPos.height = 0;
+        windowPos.width = 200 * GameSettings.UI_SCALE;
+        optionsWindowPos.height = 0;
+        optionsWindowPos.width = 350 * GameSettings.UI_SCALE;
+    }
+	private void Update()
 	{
-		if(vessel.mainBody.bodyName == "Sun")
+		if (Input.GetKeyDown(KeyCode.F7) && !(Input.GetKey(KeyCode.RightShift) || Input.GetKey(KeyCode.LeftShift)))
+		{
+			Toggle();
+		}
+        if (Input.GetKey(KeyCode.RightShift) || Input.GetKey(KeyCode.LeftShift))
+        {
+            if (Input.GetKeyDown(KeyCode.F7))
+            {
+                ToggleOptions();
+            }
+        }
+    }
+	private void OnDestroy() 
+	{
+		if (coreinited)
+		{
+			if ((toggled == true) && ((HighLogic.LoadedSceneIsFlight) || HighLogic.LoadedScene.Equals(GameScenes.SPACECENTER) || HighLogic.LoadedScene.Equals(GameScenes.TRACKSTATION)))
+			{
+				saveConfig(false, false);
+			}
+			if ((options == true) && ((HighLogic.LoadedSceneIsFlight) || HighLogic.LoadedScene.Equals(GameScenes.SPACECENTER) || HighLogic.LoadedScene.Equals(GameScenes.TRACKSTATION)))
+			{
+				saveConfig(false, false);
+			}
+		}
+	}
+	protected double localSolarTime(CelestialBody body) //may be used later for planets rise
+	{
+		double solarDayLength = body.solarDayLength;
+		double time = Planetarium.GetUniversalTime() + (body.solarDayLength / 2);
+		double day = (int)(time / solarDayLength);
+		double TimeOfDay = ((time - (day * solarDayLength)) / solarDayLength) * 24;
+		return TimeOfDay;
+
+	}
+	protected double trueRelativeTime(CelestialBody body) //relative to reference body
+	{
+        if (body.isStar)
+            return 12;
+
+        return localSolarTime(body) + exactTimeZone(body);
+    }
+	protected double trueTime(CelestialBody body)
+	{
+        if (body.isStar)
+            return 12;
+
+        return localSolarTime(body) + exactTimeZone(body);
+    }
+	protected double kmtRelativeTime(CelestialBody body) //relative to reference body
+	{
+        if (body.isStar)
 			return 12;
 		
-		double trueT = (vessel.longitude+vessel.mainBody.rotationAngle - localSideralTime(vessel.mainBody))*24/360;
-
-		while (trueT < 0)
-			trueT += 24;
-
-		return trueT % 24;
+		return localSolarTime(body);
 	}
-	protected double trueTime()
+	protected double kmtTime(CelestialBody body)
 	{
-		if(vessel.mainBody.bodyName == "Sun")
-			return 12;
+        if (body.isStar)
+            return 12;
 		
-		double trueT = (vessel.longitude+vessel.mainBody.rotationAngle - sideralTime(vessel.mainBody))*24/360;
-
-		while (trueT < 0)
-			trueT += 24;
-
-		return trueT % 24;
+		return localSolarTime(body);
 	}
-	protected double kmtRelativeTime() //relative to reference body
+    protected double timeZone(CelestialBody body)
 	{
-		if(vessel.mainBody.bodyName == "Sun")
-			return 12;
-		
-		double kmtT = (vessel.mainBody.rotationAngle - localSideralTime(vessel.mainBody))*24/360;
-
-		while (kmtT < 0)
-			kmtT += 24;
-
-		return kmtT % 24;
-	}
-	protected double kmtTime()
-	{
-		if(vessel.mainBody.bodyName == "Sun")
-			return 12;
-		
-		double kmtT = (vessel.mainBody.rotationAngle - sideralTime(vessel.mainBody))*24/360;
-
-		while (kmtT < 0)
-			kmtT += 24;
-
-		return kmtT % 24;
-	}
-	protected double timeZone()
-	{
-		if(vessel.mainBody.bodyName == "Sun")
+		double timeZ;
+		if (body.isStar)
+		{
 			return 0;
-		
-		double timeZ = Math.Round(vessel.longitude * 24 / 360);
+		}
+		else
+		{
+            timeZ = Math.Round(body.GetLongitude(FlightGlobals.ActiveVessel.GetWorldPos3D(),true) * 24 / 360) + 5;
+        }
+
 		while(timeZ > 12)
 			timeZ -= 24;
 		while(timeZ < -11)
 			timeZ += 24;
 		return timeZ;
 	}
-	protected double localRelativeTime()
+	protected double exactTimeZone(CelestialBody body)
+    {
+        double timeZ;
+        if (body.isStar)
+        {
+            return 0;
+        }
+        else
+        {
+            timeZ = body.GetLongitude(FlightGlobals.ActiveVessel.GetWorldPos3D(), true) * 24 / 360 + 5;
+        }
+
+        while (timeZ > 12)
+            timeZ -= 24;
+        while (timeZ < -11)
+            timeZ += 24;
+        return timeZ;
+    }
+    protected double localRelativeTime(CelestialBody body)
 	{
-		if(vessel.mainBody.bodyName == "Sun")
+		if(FlightGlobals.ActiveVessel.mainBody.isStar)
 			return 12;
 		
-		double localT = kmtRelativeTime() + timeZone();
+		double localT = kmtRelativeTime(body) + timeZone(body);
 
 		while (localT < 0)
 			localT += 24;
 
 		return localT % 24;
 	}
-	protected double localTime()
+	protected double localTime(CelestialBody body)
 	{
-		if(vessel.mainBody.bodyName == "Sun")
+		if(FlightGlobals.ActiveVessel.mainBody.isStar)
 			return 12;
 		
-		double localT = kmtTime() + timeZone();
+		double localT = kmtTime(body) + timeZone(body);
 
 		while (localT < 0)
 			localT += 24;
@@ -400,18 +412,10 @@ public class LocalTimePart : Part
 	}
 	protected double kscTime()
 	{
-		CelestialBody kerbin = getKerbin();
-		double kscT = (kerbin.rotationAngle - kerbin.orbit.trueAnomaly) * 24 / 360 - 5;//works because of Kerbin orbit
-
-		while (kscT < 0)
-			kscT += 24;
-
-		return kscT % 24;
-	}
+        return localSolarTime(FlightGlobals.GetHomeBody());
+    }
 	protected void realWorldTime()
 	{
-		if(displaystrings)
-		{
 			String realWorldT = "";
 			if(display24real)
 				realWorldT = System.DateTime.Now.ToLocalTime().ToString("HH:mm");
@@ -425,77 +429,26 @@ public class LocalTimePart : Part
 				realWorldT += System.DateTime.Now.ToLocalTime().ToString("tt", CultureInfo.InvariantCulture);
 
 			GUILayout.Label(realWorldT);
-		}
-		else
-		{
-			double hour = System.DateTime.Now.Hour;
-			double minute = System.DateTime.Now.Minute;
-			double second = System.DateTime.Now.Second;
-		
-			double amState = 0;
-
-			if(!display24real)
-			{
-				if(hour >= 12)
-				{
-					amState = 1;
-					hour -= 12;
-				}
-				
-				if(hour < 1)
-					hour +=12;
-			}
-		
-			double hourfirdig = Math.Floor(hour / 10);
-			double hoursecdig = Math.Floor(hour) % 10;
-		
-			double minfirdig = Math.Floor(minute / 10);
-			double minsecdig = Math.Floor(minute) % 10;
-		
-			double secfirdig = Math.Floor(second / 10);
-			double secsecdig = Math.Floor(second) % 10;
-		
-			bool dispminsep = (System.DateTime.Now.Millisecond < 500) || displaySecsreal;
-		
-			GUILayout.BeginHorizontal();
-
-			GUILayout.Label(texFromDigit(hourfirdig), styman.texStyle);
-			GUILayout.Label(texFromDigit(hoursecdig), styman.texStyle);
-			GUILayout.Label(dispminsep ? texman.getTexture("separator") : texman.getTexture("separator_black"), styman.texStyle);
-			GUILayout.Label(texFromDigit(minfirdig), styman.texStyle);
-			GUILayout.Label(texFromDigit(minsecdig), styman.texStyle);
-			if(displaySecsreal)
-			{
-				GUILayout.Label(texman.getTexture("separator"), styman.texStyle);
-				GUILayout.Label(texFromDigit(secfirdig), styman.texStyle);
-				GUILayout.Label(texFromDigit(secsecdig), styman.texStyle);
-			}
-		
-			if(!display24real)
-			{
-				GUILayout.Label((amState == 0) ? texman.getTexture("AM") : texman.getTexture("PM"), styman.texStyle);
-			}
-			
-			Utils.drawblanks(texman, styman, "mid", displaySecsreal, !display24real, existsSecs(), existsAm(), existsBoth());
-		
-			GUILayout.EndHorizontal();
-		}
 	}
 	protected void timeDoubleToDisplay(double time, double timeZone, bool display24, bool displaySecs, bool displayTZ, char TZfirstLetter)
 	{
-		double amState = 0;
-
-		if(!display24)
+        while (timeZone > 12)
+            timeZone -= 24;
+        while (timeZone < -11)
+            timeZone += 24;
+        double amState = 0;
+		if (!display24)
 		{
-			if(time >= 12)
+			if (time >= 12)
 			{
 				amState = 1;
 				time -= 12;
 			}
-			
-			if(time < 1)
-				time +=12;
-		}
+            if (time < 0)
+            {
+                time += 12;
+            }
+        }
 		
 		double timecpy = time;
 		double hourfirdig = Math.Floor(time / 10);
@@ -517,89 +470,46 @@ public class LocalTimePart : Part
 		double gmtsecdig = Math.Floor(timeZonecpy) % 10;
 		
 		bool dispminsep = (System.DateTime.Now.Millisecond < 500) || displaySecs;
-		
-		if(displaystrings)
-		{
-			String result = "";
+        String result = "";
 
-			result += hourfirdig.ToString() + hoursecdig.ToString() + ":" + minfirdig.ToString() + minsecdig.ToString();
+        result += hourfirdig.ToString() + hoursecdig.ToString() + ":" + minfirdig.ToString() + minsecdig.ToString();
 
-			if(displaySecs)
-				result += ":" + secfirdig.ToString() + secsecdig.ToString();
-			
-			if(!display24)
-				result += (amState == 0) ? "AM" : "PM";
+        if (displaySecs)
+            result += ":" + secfirdig.ToString() + secsecdig.ToString();
 
-			if(displayTZ)
-				result += " (" + TZfirstLetter.ToString() + "MT" + ((timeZone >= 0) ? "+" : "") + timeZone.ToString() + ")";
+        if (!display24)
+            result += (amState == 0) ? "AM" : "PM";
 
-			GUILayout.Label(result);
-		}
-		else
-		{
-			GUILayout.BeginVertical();
-			GUILayout.BeginHorizontal();
+        if (displayTZ)
+            result += " (" + TZfirstLetter.ToString() + "MT" + ((timeZone >= 0) ? "+" : "") + Math.Round(timeZone).ToString() + ")";
 
-			GUILayout.Label(texFromDigit(hourfirdig), styman.texStyle);
-			GUILayout.Label(texFromDigit(hoursecdig), styman.texStyle);
-			GUILayout.Label(dispminsep ? texman.getTexture("separator") : texman.getTexture("separator_black"), styman.texStyle);
-			GUILayout.Label(texFromDigit(minfirdig), styman.texStyle);
-			GUILayout.Label(texFromDigit(minsecdig), styman.texStyle);
-			if(displaySecs)
-			{
-				GUILayout.Label(texman.getTexture("separator"), styman.texStyle);
-				GUILayout.Label(texFromDigit(secfirdig), styman.texStyle);
-				GUILayout.Label(texFromDigit(secsecdig), styman.texStyle);
-			}
-			
-			if(!display24)
-			{
-				GUILayout.Label((amState == 0) ? texman.getTexture("AM") : texman.getTexture("PM"), styman.texStyle);
-			}
-			Utils.drawblanks(texman, styman, "mid", displaySecs, !display24, existsSecs(), existsAm(), existsBoth());
-			
-			GUILayout.EndHorizontal();
-			if(displayTZ)
-			{
-				GUILayout.BeginHorizontal();
-				GUILayout.Label(texman.getTexture(TZfirstLetter.ToString()), styman.texStyle);
-				GUILayout.Label(texman.getTexture("MT"), styman.texStyle);
-				GUILayout.Label((gmtSign < 0) ? texman.getTexture("minus") : texman.getTexture("plus"), styman.texStyle);
-				GUILayout.Label(texsFromDigit(gmtfirdig), styman.texStyle);
-				GUILayout.Label(texsFromDigit(gmtsecdig), styman.texStyle);
-				Utils.drawblanks(texman, styman, "bot", false, false, existsSecs(), existsAm(), existsBoth());
-				GUILayout.EndHorizontal();
-			}
-			GUILayout.EndVertical();
-			
-		}
-	}
-	protected Texture2D texFromDigit(double digit)
-	{
-		return texman.getTexture(digit.ToString());
-	}
-	protected Texture2D texsFromDigit(double digit)
-	{
-		return texman.getTexture(digit.ToString() + "s");
+        GUILayout.Label(result,styman.timeStyle);
 	}
 	protected CelestialBody getKerbin()
 	{
-		List<CelestialBody> planets = FlightGlobals.Bodies;
-
-		foreach(CelestialBody body in planets)
-		{
-			if(body.bodyName == "Kerbin")
-				return body;
-		}
-		return vessel.mainBody;
+		return FlightGlobals.GetHomeBody();
 	}
-	protected void saveConfig()
+	protected void saveConfig(bool forcetogglefalse, bool forceoptionsfalse)
 	{
 		print("Kerbal Local Time : saving config");
 		config.SetValue("windowPos", windowPos);
 		config.SetValue("optionsWindowPos", optionsWindowPos);
-		config.SetValue("toggled", toggled);
-		config.SetValue("options", options);
+		if (!forcetogglefalse)
+		{
+			config.SetValue("toggled", toggled);
+		}
+		else
+		{
+            config.SetValue("toggled", false);
+        }
+		if (!forceoptionsfalse)
+		{
+            config.SetValue("options", options);
+        }
+		else
+		{
+            config.SetValue("options", false);
+        }
 
 		config.SetValue("displayksc", displayksc);
 		config.SetValue("displaylocal", displaylocal);
@@ -633,8 +543,6 @@ public class LocalTimePart : Part
 
 		toggled = config.GetValue<bool>("toggled", false);
 		options = config.GetValue<bool>("options", false);
-		
-		displaystrings = config.GetValue<bool>("displaystrings", false);
 
 		displayksc = config.GetValue<bool>("displayksc", true);
 		displaylocal = config.GetValue<bool>("displaylocal", true);
