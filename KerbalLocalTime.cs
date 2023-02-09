@@ -360,7 +360,15 @@ public class LocalTimePart : MonoBehaviour
 		}
 		else
 		{
-            timeZ = Math.Round(body.GetLongitude(FlightGlobals.ActiveVessel.GetWorldPos3D(),true) * 24 / 360) + 5;
+			if (body.Equals(FlightGlobals.currentMainBody))
+			{
+				timeZ = Math.Round(FlightGlobals.ActiveVessel.longitude * 24 / 360) + 5;
+
+            }
+			else
+			{
+                timeZ = Math.Round(body.GetLongitude(FlightGlobals.ActiveVessel.GetWorldPos3D(), true) * 24 / 360) + 5;
+            }
         }
 
 		while(timeZ > 12)
