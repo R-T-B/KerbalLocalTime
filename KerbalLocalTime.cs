@@ -193,30 +193,30 @@ public class LocalTimePart : MonoBehaviour
 		
 		if(wndChanged)
 		{
-			if (windowPos.xMax > Screen.width)
+			if (windowPos.xMax > Screen.currentResolution.width)
 			{
 				windowPos.xMin = 0;
-                windowPos.xMax = Screen.width /2;
+                windowPos.xMax = Screen.currentResolution.width /2;
             }
-            if (windowPos.yMax > Screen.height)
+            if (windowPos.yMax > Screen.currentResolution.height)
             {
                 windowPos.yMin = 0;
-                windowPos.yMax = Screen.height / 2;
+                windowPos.yMax = Screen.currentResolution.height / 2;
             }
             windowPos.height = 0;
             windowPos.width = 200 * GameSettings.UI_SCALE;
         }
 		if(optChanged)
 		{
-            if (optionsWindowPos.xMax > Screen.width)
+            if (optionsWindowPos.xMax > Screen.currentResolution.width)
             {
                 optionsWindowPos.xMin = 0;
-                optionsWindowPos.xMax = Screen.width / 2;
+                optionsWindowPos.xMax = Screen.currentResolution.width / 2;
             }
-            if (optionsWindowPos.yMax > Screen.height)
+            if (optionsWindowPos.yMax > Screen.currentResolution.height)
             {
                 optionsWindowPos.yMin = 0;
-                optionsWindowPos.yMax = Screen.height / 2;
+                optionsWindowPos.yMax = Screen.currentResolution.height / 2;
             }
             optionsWindowPos.height = 0;
 			optionsWindowPos.width = 350 * GameSettings.UI_SCALE;
@@ -607,8 +607,8 @@ public class LocalTimePart : MonoBehaviour
 		config = KSP.IO.PluginConfiguration.CreateForType<LocalTimePart>(null);
 		config.load();
 
-		windowPos = config.GetValue<Rect>("windowPos", new Rect(Screen.width / 2, Screen.height / 2, 0, 0));
-		optionsWindowPos = config.GetValue<Rect>("optionsWindowPos", new Rect(Screen.width / 2, Screen.height / 2, 0, 0));
+		windowPos = config.GetValue<Rect>("windowPos", new Rect(Screen.currentResolution.width / 2, Screen.currentResolution.height / 2, 0, 0));
+		optionsWindowPos = config.GetValue<Rect>("optionsWindowPos", new Rect(Screen.currentResolution.width / 2, Screen.currentResolution.height / 2, 0, 0));
 
 		toggled = config.GetValue<bool>("toggled", false);
 		options = config.GetValue<bool>("options", false);
