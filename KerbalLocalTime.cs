@@ -89,50 +89,13 @@ public class LocalTimePart : MonoBehaviour
 		}
 		catch
 		{
-            try
+            GUILayout.BeginVertical(styman.layoutStyle);
+            if (displayksc)
             {
-				Vessel veselTarget = PlanetariumCamera.fetch.target.vessel;
-                String vesselMainBodyName = veselTarget.mainBody.bodyName;
-                GUILayout.BeginVertical(styman.layoutStyle);
-                if (displaylocal)
-                {
-                    GUILayout.Label("Local Time", styman.timeLabelStyle);
-                    timeDoubleToDisplay(localTime(veselTarget.mainBody), timeZone(veselTarget.mainBody), display24local, displaySecslocal, displayTZlocal, veselTarget.mainBody.bodyName.First());
-                }
-                if (displayrel)
-                {
-                    GUILayout.Label(veselTarget.mainBody.referenceBody.bodyName + " Related Time", styman.timeLabelStyle);
-                    if (veselTarget.mainBody.isStar)
-                    {
-                        timeDoubleToDisplay(localTime(veselTarget.mainBody), timeZone(veselTarget.mainBody), display24local, displaySecslocal, displayTZlocal, veselTarget.mainBody.bodyName.First());
-                    }
-                    else
-                    {
-                        timeDoubleToDisplay(localRelativeTime(veselTarget.mainBody.referenceBody), timeZone(veselTarget.mainBody.referenceBody), display24rel, displaySecsrel, displayTZrel, veselTarget.mainBody.referenceBody.bodyName.First());
-                    }
-                }
-                if (displayksc)
-                {
-                    GUILayout.Label("KSC Time", styman.timeLabelStyle);
-                    timeDoubleToDisplay(kscTime(), 0, display24ksc, displaySecsksc, displayTZksc, 'K');
-                }
-                if (displayreal)
-                {
-                    GUILayout.Label("Real World Time", styman.timeLabelStyle);
-                    realWorldTime();
-                }
-                GUILayout.EndVertical();
+                GUILayout.Label("KSC Time", styman.timeLabelStyle);
+                timeDoubleToDisplay(kscTime(), 0, display24ksc, displaySecsksc, displayTZksc, 'K');
             }
-            catch
-            {
-                GUILayout.BeginVertical(styman.layoutStyle);
-                if (displayksc)
-                {
-                    GUILayout.Label("KSC Time", styman.timeLabelStyle);
-                    timeDoubleToDisplay(kscTime(), 0, display24ksc, displaySecsksc, displayTZksc, 'K');
-                }
-                GUILayout.EndVertical();
-            }
+            GUILayout.EndVertical();
         }
 
         //DragWindow makes the window draggable. The Rect specifies which part of the window it can by dragged by, and is 
